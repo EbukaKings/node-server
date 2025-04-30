@@ -1,40 +1,49 @@
 import http from 'http';
-import fs from 'fs/promises'; 
-const PORT = process.env.PORT;
+import fs from 'fs/promises';
+import url from 'url';
+import path from 'path';
 
-//Get current path
+const PORT = process.env.PORT || 3000;  
 
-__filename
-__dirname
+// Get current path
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+console.log(__dirname, __filename);
 
-const server = http.createServer(function(req, res) {
-    try{
-        // check if Get request
+const server = http.createServer(async function(req, res) {
+    try {
+        // Check if GET request
         if (req.method === 'GET') {
+            let filePath;
             if (req.url === '/') {
-                res.writeHead(200, {'Content-Type': 'text/html'})
-                res.end('<h1>Home Page</h1>');
-        } else if(req.url === '/about') {
-            res.writeHead(200, {'Content-Type': 'text/html'})
-            res.end('<h1>About</h1>');
-        }
+                filePath = path.join(__dirname, 'public/index.html');
+            } else if (req.url === '/about') {
+                filePath = path.join(__dirname, 'public/about.html');
+            } else {
+                // If route not found, send 404
+                res.writeHead(404, { 'Content-Type': 'text/plain' });
+                res.end('404 Not Found');
+                return;
+            }
+
+            // Try to read and serve the file
+            const data = await fs.readFile(filePath, 'utf-8');
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(data);
+
         } else {
-            throw new Error('Method not allowed')
+            // Method not allowed
+            res.writeHead(405, { 'Content-Type': 'text/plain' });
+            res.end('405 Method Not Allowed');
         }
+
     } catch (error) {
-        res.writeHead(500, {'Content-Type': 'text/plain'})
-        res.end('<h1>server error</h1>');
+        console.error(error);
+        res.writeHead(500, { 'Content-Type': 'text/html' });
+        res.end('<h1>Server Error</h1>');
     }
-    
-  //res.setHeader('Content-Type', 'text/html')
-  //res.statusCode = 500;
-  
-  //res.end(JSON.stringify({ message: 'sever error'})); 
-  // Add parentheses here to properly end the response
-  
 });
 
-
 server.listen(PORT, () => {
-  console.log(`server running on port: ${PORT}`);
+    console.log(`Server running on port: ${PORT}`);
 });
